@@ -113,7 +113,9 @@ export function aggregateSuppliers(bills, returns = [], directorySuppliers = [])
     bySupplier.set(key, emptySupplier(key, ds.name.trim(), ds.phone || '', ds.address || ''));
   });
 
-  return Array.from(bySupplier.values()).sort((a, b) => a.name.localeCompare(b.name));
+  return Array.from(bySupplier.values()).sort((a, b) =>
+    (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+  );
 }
 export function supplierStats(suppliers) {
   const sum = (pick) => suppliers.reduce((total, s) => total + pick(s), 0);

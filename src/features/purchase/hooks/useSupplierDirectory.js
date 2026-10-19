@@ -31,12 +31,27 @@ export function useSupplierDirectory() {
   const { loading, refreshing, error, refresh, reload } = useFocusLoad(async () => {
     setSuppliers(await db.getAllSuppliers());
   });
+  const sortedSuppliers = useMemo(
+    () =>
+      [...suppliers].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      ),
+    [suppliers],
+  );
   // "Add Supplier" button of the Purchase Bill screen hands over the phone number it could not find
   const { phone: phoneParam } = useRouteParams().params;
   useEffect(() => {
     if (typeof phoneParam === 'string' && phoneParam) setNewSupplierRaw((s) => ({ ...s, phone: phoneParam }));
   }, [phoneParam]);
-  const visible = useMemo(() => filterSupplierDirectory(suppliers, query), [suppliers, query]);
+  const visible = useMemo(
+    () => {
+      const filtered = filterSupplierDirectory(sortedSuppliers, query);
+      return [...filtered].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      );
+    },
+    [sortedSuppliers, query],
+  );
   const add = async () => {
     const message = validateNewSupplier(newSupplier);
     if (message) {
@@ -115,7 +130,7 @@ export function useSupplierDirectory() {
     }
   };
   return {
-    suppliers,
+    suppliers: sortedSuppliers,
     visible,
     query,
     setQuery,

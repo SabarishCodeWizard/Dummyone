@@ -24,7 +24,22 @@ export function useCustomerManager() {
   const focusLoad = useFocusLoad(async () => {
     setCustomers(await db.getAllCustomers());
   });
-  const visible = useMemo(() => filterCustomers(customers, query), [customers, query]);
+  const sortedCustomers = useMemo(
+    () =>
+      [...customers].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      ),
+    [customers],
+  );
+  const visible = useMemo(
+    () => {
+      const filtered = filterCustomers(sortedCustomers, query);
+      return [...filtered].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      );
+    },
+    [sortedCustomers, query],
+  );
   const openAdd = useCallback(
     (phone = '') => {
       setTarget(freshAddTarget(phone));
@@ -109,7 +124,7 @@ export function useCustomerManager() {
   );
   return {
     ...focusLoad,
-    customers,
+    customers: sortedCustomers,
     visible,
     query,
     setQuery,

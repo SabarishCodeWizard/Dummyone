@@ -37,11 +37,18 @@ export default function SupplierDetailsPage() {
     setDirectorySuppliers(s);
   });
 
-  const suppliers = useMemo(
-    () => aggregateSuppliers(bills, returns, directorySuppliers),
-    [bills, returns, directorySuppliers],
-  );
-  const visible = useMemo(() => filterSuppliers(suppliers, query), [suppliers, query]);
+  const suppliers = useMemo(() => {
+    const list = aggregateSuppliers(bills, returns, directorySuppliers);
+    return [...list].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+    );
+  }, [bills, returns, directorySuppliers]);
+  const visible = useMemo(() => {
+    const list = filterSuppliers(suppliers, query);
+    return [...list].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+    );
+  }, [suppliers, query]);
   // the status cards sum the suppliers shown (follow the search), the same as on Customer Details
   const stats = useMemo(() => supplierStats(visible), [visible]);
   const tiles = useMemo(() => buildSupplierStatTiles(stats), [stats]);

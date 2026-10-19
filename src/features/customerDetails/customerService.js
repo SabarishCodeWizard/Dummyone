@@ -7,5 +7,8 @@ export async function loadCustomerSummaries(includeDirectory = false) {
     db.getAllReturns({ strict: true }),
     includeDirectory ? db.getAllCustomers().catch(() => []) : Promise.resolve([]),
   ]);
-  return buildCustomerSummaries(invoices, returns, directoryCustomers || []);
+  const list = buildCustomerSummaries(invoices, returns, directoryCustomers || []);
+  return list.sort((a, b) =>
+    (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+  );
 }

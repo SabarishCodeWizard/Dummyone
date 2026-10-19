@@ -15,26 +15,38 @@ export function useCustomerDetails() {
     setCustomers(await loadCustomerSummaries(true));
   });
   const [term, setTerm] = useState('');
-  const visible = useMemo(() => filterCustomers(customers, term), [customers, term]);
+  const sortedCustomers = useMemo(
+    () =>
+      [...customers].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      ),
+    [customers],
+  );
+  const visible = useMemo(() => {
+    const filtered = filterCustomers(sortedCustomers, term);
+    return [...filtered].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+    );
+  }, [sortedCustomers, term]);
   const stats = useMemo(() => computeStats(visible), [visible]);
   const [reminderFor, setReminderFor] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
   const openExport = useCallback(() => {
-    if (customers.length === 0) {
+    if (sortedCustomers.length === 0) {
       toast('Notification', 'No customer data to export.', 'info');
       return;
     }
     setExportOpen(true);
-  }, [customers.length, toast]);
+  }, [sortedCustomers.length, toast]);
   const runExport = async (format, columns) => {
     setExportOpen(false);
     try {
       // the web exported every customer, not just the searched ones
-      const shared = await saveAndShareExport(buildExport(customers, format, columns, todayISO()));
+      const shared = await saveAndShareExport(buildExport(sortedCustomers, format, columns, todayISO()));
       if (shared)
         toast(
           'Export Successful!',
-          `Exported ${customers.length} customers to ${format.toUpperCase()} file`,
+          `Exported ${sortedCustomers.length} customers to ${format.toUpperCase()} file`,
           'success',
         );
       else toast('Export Failed', 'File sharing is not available on this device.', 'error');
@@ -44,7 +56,7 @@ export function useCustomerDetails() {
     }
   };
   return {
-    customers,
+    customers: sortedCustomers,
     visible,
     stats,
     loading,
