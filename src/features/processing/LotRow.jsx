@@ -230,16 +230,16 @@ export function LotRow({ lot, stage, onNext, onPrint, onAction }) {
             </Button>
           ) : null}
           <Button size="sm" variant="outline" icon={Printer} onClick={() => onPrint(lot)} title="Print my DC">
-            DC
+            Print DC
           </Button>
           <Button size="sm" variant="outlineSuccess" icon={Wallet} onClick={() => onAction('pay', lot)}>
-            + Pay
+            Add payment
           </Button>
           <Button size="sm" variant="outlineInfo" icon={History} onClick={() => onAction('payHistory', lot)}>
-            Payments{payments ? ` (${payments})` : ''}
+            Payment History{payments ? ` (${payments})` : ''}
           </Button>
           <Button size="sm" variant="outlineWarning" icon={RotateCcw} onClick={() => onAction('return', lot)}>
-            + Return
+            Add Return
           </Button>
           <Button
             size="sm"
@@ -247,10 +247,7 @@ export function LotRow({ lot, stage, onNext, onPrint, onAction }) {
             icon={ListRestart}
             onClick={() => onAction('returnHistory', lot)}
           >
-            Returns{returns ? ` (${returns})` : ''}
-          </Button>
-          <Button size="sm" variant="edit" icon={Pencil} onClick={() => onAction('edit', lot)}>
-            Edit
+            Return History{returns ? ` (${returns})` : ''}
           </Button>
           {lot.status !== LOT_STATUS.AT_DYEING ? (
             <Button
@@ -263,6 +260,9 @@ export function LotRow({ lot, stage, onNext, onPrint, onAction }) {
               Undo
             </Button>
           ) : null}
+          <Button size="sm" variant="edit" icon={Pencil} onClick={() => onAction('edit', lot)}>
+            Edit
+          </Button>
           <Button size="sm" variant="outlineDanger" icon={Trash2} onClick={() => onAction('delete', lot)}>
             Delete
           </Button>

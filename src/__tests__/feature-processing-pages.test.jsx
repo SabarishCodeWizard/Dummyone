@@ -145,7 +145,7 @@ describe('Processing Lots page', () => {
   test('paying the dyeing unit from the lot', async () => {
     const saved = stubDb([issued]);
     renderPage(<ProcessingLotsPage />);
-    fireEvent.click(await screen.findByRole('button', { name: '+ Pay' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Add payment' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByLabelText('Amount (₹)')).toHaveValue('1000');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save payment' }));
@@ -313,7 +313,7 @@ describe('lot actions: edit, payment history, returns', () => {
   test('every lot row offers the six actions (plus next step and DC print)', async () => {
     stubDb([issued]);
     renderPage(<ProcessingLotsPage />);
-    for (const name of ['Edit', 'Delete', '+ Pay', 'Payments', '+ Return', 'Returns', 'DC', "Dyer's DC"]) {
+    for (const name of ['Edit', 'Delete', 'Add payment', 'Payment History', 'Add Return', 'Return History', 'Print DC', "Dyer's DC"]) {
       expect(await screen.findByRole('button', { name })).toBeInTheDocument();
     }
   });
@@ -332,7 +332,7 @@ describe('lot actions: edit, payment history, returns', () => {
     vi.spyOn(db, 'deleteAccountTransaction').mockResolvedValue();
     renderPage(<ProcessingLotsPage />);
     fireEvent.click(await screen.findByRole('radio', { name: /At Combing/ }));
-    fireEvent.click(await screen.findByRole('button', { name: /^Payments/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Payment History/ }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('₹400.00')).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete payment' }));
@@ -348,7 +348,7 @@ describe('lot actions: edit, payment history, returns', () => {
     // the combing tab shows combing details: what the combing unit got from the dyer
     expect(await screen.findByText('Received from dyeing unit')).toBeInTheDocument();
     expect(screen.queryByText('Sent on my DC')).toBeNull();
-    fireEvent.click(await screen.findByRole('button', { name: '+ Return' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Return' }));
     let dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/can return up to 47 kg/)).toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText('Quantity returned (kg)'), { target: { value: '7' } });
@@ -359,7 +359,7 @@ describe('lot actions: edit, payment history, returns', () => {
     await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0].returns[0]).toMatchObject({ from: 'combing', qty: 7, description: 'Navy Dyed 30s' });
 
-    fireEvent.click(await screen.findByRole('button', { name: /^Returns/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Return History/ }));
     dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('7 kg')).toBeInTheDocument();
   });

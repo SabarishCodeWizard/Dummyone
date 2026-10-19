@@ -3,7 +3,8 @@
  * every form / action of a lot. Ongoing lots are split by stage — "At Dyeing" and "At Combing" — so each process
  * shows only its own details (several lots can be at the same unit at once; each row is one lot / DC).
  */
-import { CheckCircle2, Factory, FilePlus2, Pencil, Scale, Truck, Wallet } from 'lucide-react';
+import { CheckCircle2, Factory, FilePlus2, Pencil, Plus, Scale, Truck, Wallet } from 'lucide-react';
+import FloatingAddButton from '@/features/overview/components/FloatingAddButton';
 import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { formatCurrency, toNum } from '@/core/format';
@@ -258,8 +259,13 @@ export function LotsView({ mode }) {
       icon={mode === 'completed' ? CheckCircle2 : Factory}
       actions={
         mode === 'ongoing' ? (
-          <Button variant="primary" icon={FilePlus2} onClick={() => setModal({ kind: 'issue', lot: null })}>
-            <span className="max-sm:sr-only">New lot</span>
+          <Button
+            variant="primary"
+            icon={Plus}
+            onClick={() => setModal({ kind: 'issue', lot: null })}
+            className="max-sm:hidden"
+          >
+            New lot
           </Button>
         ) : null
       }
@@ -413,6 +419,9 @@ export function LotsView({ mode }) {
         confirm={confirm}
         toast={toast}
       />
+      {mode === 'ongoing' ? (
+        <FloatingAddButton label="New lot" onClick={() => setModal({ kind: 'issue', lot: null })} />
+      ) : null}
     </Page>
   );
 }

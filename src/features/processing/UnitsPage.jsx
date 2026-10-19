@@ -3,6 +3,7 @@
  * minus payments over the processing lots plus the old (archived) batches.
  */
 import { Factory, Pencil, Phone, Plus, Sparkles, Trash2 } from 'lucide-react';
+import FloatingAddButton from '@/features/overview/components/FloatingAddButton';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { db } from '@/core/db';
@@ -411,8 +412,13 @@ function UnitsScreen({ kind }) {
       icon={Icon}
       max="5xl"
       actions={
-        <Button variant="primary" icon={Plus} onClick={() => setEditing({ unit: null })}>
-          <span className="max-sm:sr-only">Add unit</span>
+        <Button
+          variant="primary"
+          icon={Plus}
+          onClick={() => setEditing({ unit: null })}
+          className="max-sm:hidden"
+        >
+          Add {cfg.singular}
         </Button>
       }
     >
@@ -504,6 +510,10 @@ function UnitsScreen({ kind }) {
           toast('Saved', undefined, 'success');
           void reload();
         }}
+      />
+      <FloatingAddButton
+        label={`Add ${cfg.singular}`}
+        onClick={() => setEditing({ unit: null })}
       />
     </Page>
   );
