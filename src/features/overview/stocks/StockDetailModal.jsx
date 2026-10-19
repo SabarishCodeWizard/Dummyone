@@ -1,0 +1,262 @@
+import { PackageMinus, PackagePlus } from 'lucide-react';
+import { useRef } from 'react';
+
+import { formatRupees } from '@/core/format';
+import { Badge, Button, DataTable, Modal, SectionHeader } from '@/ui';
+
+import { useModules } from '@/hooks/useBusiness';
+import { useAppNavigate } from '@/hooks/useRouteParams';
+import { AvailableValue, OpeningValue, RollsLine } from './StockRowParts';
+import {
+  hasRolls,
+  historyDate,
+  historyInvoiceNo,
+  historyQty,
+  historyRolls,
+  historyTotal,
+  processingLotLink,
+  rollsText,
+} from './stocksLogic';
+
+const PURCHASE = {
+  key: 'purchase',
+  title: 'Purchase History',
+  party: 'Supplier',
+  empty: 'No purchases found.',
+  Icon: PackagePlus,
+};
+const SALES = {
+  key: 'sales',
+  title: 'Sales History',
+  party: 'Customer',
+  empty: 'No sales found.',
+  Icon: PackageMinus,
+};
+
+function SummaryItem({ label, children }) {
+  return (
+    <div className="min-w-0 text-center">
+      <dt className="text-[10px] font-bold tracking-[0.08em] text-slate-500 uppercase">{label}</dt>
+      <dd className="mt-1">{children}</dd>
+    </div>
+  );
+}
+
+/** `showRolls`: the product is counted in rolls (a Rolls column + total; entries without rolls show '-'). */
+function HistorySection({ kind, entries, onSelectBill, showRolls }) {
+  // the average rate is over the purchase lines only (return lines excluded), like the Avg Purchase Rate tile
+  const positiveQty = entries.reduce((sum, e) => sum + (e.qty > 0 ? e.qty : 0), 0);
+  const positiveCost = entries.reduce((sum, e) => sum + (e.qty > 0 ? e.amount : 0), 0);
+  const columns = [
+    { key: 'date', header: 'Date', nowrap: true, value: (e) => historyDate(e.date) },
+    {
+      key: 'invoice',
+      header: 'Invoice No',
+      // the plain invoice number, or the return / batch / DC reference text
+      render: (e) => (
+        <span className="font-semibold text-brand-700 underline decoration-brand-300 underline-offset-2 hover:text-brand-900">
+          {historyInvoiceNo(e.invoiceNo)}
+        </span>
+      ),
+    },
+    { key: 'party', header: kind.party, value: (e) => e.party },
+    ...(showRolls
+      ? [
+          {
+            key: 'rolls',
+            header: 'Rolls',
+            align: 'right',
+            value: (e) => (e.rolls ? e.rolls : '-'),
+          },
+        ]
+      : []),
+    { key: 'qty', header: 'Qty', align: 'right', value: (e) => e.qty },
+    { key: 'rate', header: 'Rate', align: 'right', value: (e) => formatRupees(e.rate) },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      className: 'font-semibold',
+      value: (e) => formatRupees(e.amount),
+    },
+  ];
+  return (
+    <section className="mb-6 last:mb-0">
+      <SectionHeader
+        title={
+          <>
+            {kind.title}
+            <Badge tone="neutral" className="tabular-nums">
+              {entries.length}
+            </Badge>
+          </>
+        }
+        icon={kind.Icon}
+        className="mb-3"
+        right={
+          entries.length > 0 ? (
+            <span className="hidden text-[11px] font-medium text-slate-400 sm:inline">
+              Click row to view bill →
+            </span>
+          ) : null
+        }
+      />
+      <DataTable
+        columns={columns}
+        rows={entries}
+        rowKey={(_, i) => i}
+        onRowClick={(e) => onSelectBill?.(kind, e)}
+        dense
+        empty={<p className="py-6 text-center text-sm text-slate-500">{kind.empty}</p>}
+        renderCard={(e) => {
+          const display = historyInvoiceNo(e.invoiceNo);
+          return (
+            <div className="space-y-1 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-x-3">
+                <span className="text-slate-500">{historyDate(e.date)}</span>
+                <span className="font-display font-bold text-brand-800 underline decoration-brand-300 underline-offset-2">
+                  {display}
+                </span>
+              </div>
+              <div className="break-words text-slate-800">
+                {kind.party}: {e.party}
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500 tabular-nums">
+                  {e.qty} × {formatRupees(e.rate)}
+                  {showRolls && e.rolls ? ` · ${rollsText(e.rolls)}` : ''}
+                </span>
+                <span className="font-display font-bold text-brand-800 tabular-nums">
+                  {formatRupees(e.amount)}
+                </span>
+              </div>
+            </div>
+          );
+        }}
+        footer={
+          <div className="flex flex-wrap items-center justify-between gap-3 font-display font-bold text-brand-800">
+            <span className="text-sm">Total</span>
+            <div className="flex flex-wrap items-center gap-4 text-sm tabular-nums">
+              <span className="font-semibold text-slate-600">
+                Total Qty: <strong className="text-brand-800">{historyQty(entries)}</strong>
+              </span>
+              {showRolls ? (
+                <span className="font-semibold text-slate-600">
+                  Total Rolls: <strong className="text-brand-800">{historyRolls(entries)}</strong>
+                </span>
+              ) : null}
+              {kind === PURCHASE && entries.length > 0 ? (
+                <span className="font-semibold text-slate-600">
+                  Avg Rate:{' '}
+                  <strong className="text-emerald-700">
+                    {positiveQty > 0 ? formatRupees(positiveCost / positiveQty) : '-'}
+                  </strong>
+                </span>
+              ) : null}
+              <span className="text-base text-brand-900">{formatRupees(historyTotal(entries))}</span>
+            </div>
+          </div>
+        }
+      />
+    </section>
+  );
+}
+
+/** The original "Stock Details" modal: purchase history and sales history of one product. `row` null = closed. */
+export default function StockDetailModal({ row, onClose }) {
+  const nav = useAppNavigate();
+  // Dyeing & Combing may not be in the client's plan: then its lines are not links
+  const processingOn = useModules()('processing');
+  // keep the content while the dialog is closing / for the title
+  const last = useRef(null);
+  if (row) last.current = row;
+  const shown = row ?? last.current;
+
+  const handleSelectBill = (kind, entry) => {
+    const rawNo = entry.rawInvoiceNo || entry.invoiceNo || '';
+    if (!rawNo) return;
+    const processingEntry =
+      entry.isProcessingIssue ||
+      entry.isProcessingReceipt ||
+      entry.isProcessingReturn ||
+      entry.isCombingReceipt ||
+      entry.isCombingIssue ||
+      entry.isDyeingReceipt ||
+      entry.isDyeingIssue;
+    if (processingEntry && !processingOn) return;
+    onClose();
+    if (entry.isProcessingIssue || entry.isProcessingReceipt || entry.isProcessingReturn) {
+      // the lot where it is now: Completed Lots once received, else Processing Lots at its current stage
+      nav.push(processingLotLink(entry));
+      return;
+    }
+    // only the explicit flags decide: a supplier bill numbered "B-123" is still a purchase bill
+    if (entry.isCombingReceipt || entry.isCombingIssue || entry.isDyeingReceipt || entry.isDyeingIssue) {
+      nav.push('/processing/old');
+      return;
+    }
+    const cleanNo = String(rawNo)
+      .replace(/^Return\s*(?:-\s*Invoice No\s*|#)?/i, '')
+      .trim();
+    if (!cleanNo) return;
+    if (kind === PURCHASE) {
+      nav.push(`/purchase/history?search=${encodeURIComponent(cleanNo)}&view=${encodeURIComponent(cleanNo)}`);
+    } else {
+      nav.push(`/sales/history?search=${encodeURIComponent(cleanNo)}&view=${encodeURIComponent(cleanNo)}`);
+    }
+  };
+
+  return (
+    <Modal
+      open={row !== null}
+      onClose={onClose}
+      title={shown?.description ?? 'Product Details'}
+      size="lg"
+      footer={
+        <Button variant="neutral" onClick={onClose} className="max-sm:w-full">
+          Close
+        </Button>
+      }
+    >
+      {shown ? (
+        <>
+          <dl className="mb-6 grid grid-cols-2 gap-2 rounded-2xl bg-gold-50/60 p-3 ring-1 ring-gold-100 sm:grid-cols-5">
+            <SummaryItem label="Opening">
+              <OpeningValue row={shown} />
+              <RollsLine row={shown} rolls={shown.openingRolls} />
+            </SummaryItem>
+            <SummaryItem label="Purchased">
+              <span className="font-semibold text-slate-800 tabular-nums">{shown.purchased}</span>
+              <RollsLine row={shown} rolls={shown.purchasedRolls} />
+            </SummaryItem>
+            <SummaryItem label="Avg Purchase Rate">
+              <span className="font-semibold text-brand-800 tabular-nums">
+                {shown.avgPurchaseRate > 0 ? formatRupees(shown.avgPurchaseRate) : '-'}
+              </span>
+            </SummaryItem>
+            <SummaryItem label="Sold">
+              <span className="font-semibold text-slate-800 tabular-nums">{shown.sold}</span>
+              <RollsLine row={shown} rolls={shown.soldRolls} />
+            </SummaryItem>
+            <SummaryItem label="Available">
+              <AvailableValue row={shown} showLabel />
+              <RollsLine row={shown} rolls={shown.availableRolls} strong />
+            </SummaryItem>
+          </dl>
+          <HistorySection
+            kind={PURCHASE}
+            entries={shown.purchaseHistory}
+            onSelectBill={handleSelectBill}
+            showRolls={hasRolls(shown)}
+          />
+          <HistorySection
+            kind={SALES}
+            entries={shown.salesHistory}
+            onSelectBill={handleSelectBill}
+            showRolls={hasRolls(shown)}
+          />
+        </>
+      ) : null}
+    </Modal>
+  );
+}
