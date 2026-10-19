@@ -727,8 +727,19 @@ export class Database {
   async getAllExpenses() {
     return this._load('expenses', async () => {
       const expenses = await this._all('expenses');
-      // Sort by date descending
-      return expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Sort by date descending (latest record first); if dates tie, newest id / timestamp first
+      return expenses.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        if (dateB !== dateA) return dateB - dateA;
+        const numA = parseInt(a.id, 10);
+        const numB = parseInt(b.id, 10);
+        if (!Number.isNaN(numA) && !Number.isNaN(numB) && numB !== numA) return numB - numA;
+        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return 0;
+      });
     });
   }
   async deleteExpense(id) {

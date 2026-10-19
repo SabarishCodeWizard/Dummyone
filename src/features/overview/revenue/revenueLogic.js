@@ -135,10 +135,8 @@ export function salesReturnsOfBill(returns = [], avgCost = () => 0) {
   return { amount, cost, profit: amount - cost, lines };
 }
 /**
- * One row per invoice, sorted by bill number ascending. `salesReturns` are taken off the bill they were entered
+ * One row per invoice, sorted by bill number descending (latest first). `salesReturns` are taken off the bill they were entered
  * against (revenue, cost and profit; each return is listed under the bill's lines).
- * PARITY NOTE: the sort key is `parseInt(billNo)`; bill numbers that do not start with a digit give NaN, which JS sort
- * treats as "equal", so such invoices keep their incoming (newest-first) position relative to their neighbours.
  */
 export function computeRevenueRows(
   invoices,
@@ -188,10 +186,18 @@ export function computeRevenueRows(
     };
   });
   return rows
-    .map((row, index) => ({ row, index, key: parseInt(row.billNo) }))
+    .map((row, index) => ({
+      row,
+      index,
+      key: parseInt(row.billNo, 10),
+      dateVal: row.date && row.date !== 'Unknown' ? new Date(row.date).getTime() : 0,
+    }))
     .sort((a, b) => {
-      const diff = a.key - b.key;
-      return Number.isNaN(diff) || diff === 0 ? a.index - b.index : diff;
+      const diff = b.key - a.key;
+      if (!Number.isNaN(diff) && diff !== 0) return diff;
+      const dateDiff = b.dateVal - a.dateVal;
+      if (!Number.isNaN(dateDiff) && dateDiff !== 0) return dateDiff;
+      return a.index - b.index;
     })
     .map((x) => x.row);
 }

@@ -119,9 +119,9 @@ describe('computeRevenueRows', () => {
     },
   ];
   const rows = computeRevenueRows(invoices, purchases);
-  test('sorted by bill number ascending, "INV-" stripped for display only', () => {
-    expect(rows.map((r) => r.billNo)).toEqual(['001', '003', '010']);
-    expect(rows[0].rawBillNo).toBe('INV-001');
+  test('sorted by bill number descending, "INV-" stripped for display only', () => {
+    expect(rows.map((r) => r.billNo)).toEqual(['010', '003', '001']);
+    expect(rows[2].rawBillNo).toBe('INV-001');
   });
   test('profit = sum((rate - avg cost) x qty) - discount; per-line numbers', () => {
     const r = rows[1];
@@ -143,7 +143,7 @@ describe('computeRevenueRows', () => {
     expect(r.revenue).toBe(900); // invoice.subtotal wins
   });
   test('legacy fields: discount, date, missing customer; revenue falls back to profit + cost', () => {
-    const r = rows[0];
+    const r = rows[2];
     expect(r.profit).toBe(-10); // (110 - 110) x 2 - 10
     expect(r.discount).toBe(10);
     expect(r.name).toBe('Unknown');
@@ -151,7 +151,7 @@ describe('computeRevenueRows', () => {
     expect(r.revenue).toBe(0 + 2 * 110); // subtotal 0 -> totalBillProfit + totalCost
   });
   test('invoice without products, without any date', () => {
-    const r = rows[2];
+    const r = rows[0];
     expect(r.lines).toEqual([]);
     expect(r.profit).toBe(0);
     expect(r.name).toBe('ZED');
@@ -184,13 +184,13 @@ describe('filterRevenueRows', () => {
     [],
   );
   const names = (d, n) => filterRevenueRows(rows, d, n).map((r) => r.billNo);
-  test('no terms -> everything', () => expect(names('', '  ')).toEqual(['001', '002', '003']));
+  test('no terms -> everything', () => expect(names('', '  ')).toEqual(['003', '002', '001']));
   test('date is a substring of the stored date', () => {
     expect(names('2026-10-02', '')).toEqual(['001']);
-    expect(names('2026-10', '')).toEqual(['001', '002']);
+    expect(names('2026-10', '')).toEqual(['002', '001']);
   });
   test('name is a case-insensitive substring; both terms must match', () => {
-    expect(names('', 'SLN')).toEqual(['001', '003']);
+    expect(names('', 'SLN')).toEqual(['003', '001']);
     expect(names('2026-09', 'sln')).toEqual(['003']);
     expect(names('2026-10-03', 'sln')).toEqual([]);
   });

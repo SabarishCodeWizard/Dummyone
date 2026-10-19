@@ -97,13 +97,25 @@ export default function ExpensesPage() {
   // totals are always computed from the full filtered list, never from the visible page
   const shown = useMemo(() => {
     const byText = filterExpenses(expenses, dateTerm, reasonTerm);
-    if (sourceFilter === 'cash') {
-      return byText.filter((e) => !e.paymentSource || e.paymentSource === 'cash');
-    }
-    if (sourceFilter === 'bank') {
-      return byText.filter((e) => e.paymentSource && e.paymentSource !== 'cash');
-    }
-    return byText;
+    const filtered =
+      sourceFilter === 'cash'
+        ? byText.filter((e) => !e.paymentSource || e.paymentSource === 'cash')
+        : sourceFilter === 'bank'
+          ? byText.filter((e) => e.paymentSource && e.paymentSource !== 'cash')
+          : byText;
+    // Always display newest expenses first (descending by date and id/timestamp)
+    return [...filtered].sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      if (dateB !== dateA) return dateB - dateA;
+      const numA = parseInt(a.id, 10);
+      const numB = parseInt(b.id, 10);
+      if (!Number.isNaN(numA) && !Number.isNaN(numB) && numB !== numA) return numB - numA;
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      if (timeB !== timeA) return timeB - timeA;
+      return 0;
+    });
   }, [expenses, dateTerm, reasonTerm, sourceFilter]);
 
   const paged = usePagedRows(shown, `${dateTerm}|${reasonTerm}|${sourceFilter}`);
