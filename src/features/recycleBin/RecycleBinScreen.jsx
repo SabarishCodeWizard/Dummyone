@@ -2,7 +2,7 @@
  * Shared recycle-bin screen: list deleted bills, view, restore, delete permanently, empty the bin.
  * Configured per bin through `BIN_CONFIG[kind]` (sales = invoices, purchase = purchase bills).
  */
-import { Clock, Database, FileText, Search, Trash2 } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { formatCurrency, formatDateIN } from '@/core/format';
@@ -19,8 +19,6 @@ import {
   Pagination,
   SearchBar,
   Skeleton,
-  StatCard,
-  StatGrid,
   useFeedback,
   usePagination,
 } from '@/ui';
@@ -29,7 +27,6 @@ import { BinItemCard, BinRowActions, BinTypeBadge, deletedAtText } from './BinIt
 import {
   BIN_CONFIG,
   binItemName,
-  computeBinStats,
   displayBillNo,
   filterBinItems,
   partyName,
@@ -60,7 +57,6 @@ export default function RecycleBinScreen({ kind, title }) {
     }
   });
 
-  const stats = useMemo(() => computeBinStats(items, config.itemType, now), [items, config.itemType, now]);
   const visible = useMemo(
     () => filterBinItems(items, typeFilter, search, now),
     [items, typeFilter, search, now],
@@ -222,17 +218,6 @@ export default function RecycleBinScreen({ kind, title }) {
 
   return (
     <Page title={title} icon={Trash2}>
-      <StatGrid cols={3} className="mb-5">
-        <StatCard icon={FileText} tone="info" value={String(stats.totalItems)} label="Total Items" />
-        <StatCard
-          icon={Clock}
-          tone="warning"
-          value={stats.oldestDays === null ? '-' : `${stats.oldestDays} days`}
-          label="Oldest Item"
-        />
-        <StatCard icon={Database} tone="info" value={String(stats.invoiceItems)} label={config.countLabel} />
-      </StatGrid>
-
       <Card className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
         <SearchBar
           value={search}
