@@ -4,6 +4,7 @@
  * (core/business.js, core/auth.js); its customers and suppliers are managed in their own sections.
  */
 import {
+  AlertTriangle,
   Building2,
   Contact,
   LayoutGrid,
@@ -14,10 +15,14 @@ import {
   Settings,
   ShoppingCart,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import { useAuth } from '@/app/AuthProvider';
 import { VENDOR } from '@/core/branding';
+import { isAdminUnlocked } from '@/core/admin';
+import { db } from '@/core/db';
 import {
   DEFAULT_BUSINESS,
   isBusinessConfigured,
@@ -33,6 +38,7 @@ import {
   ChoiceChips,
   Grid,
   LoadingState,
+  Modal,
   Page,
   SectionHeader,
   TextArea,
@@ -61,6 +67,143 @@ function Section({ title, icon, children }) {
       <SectionHeader title={title} icon={icon} />
       {children}
     </Card>
+  );
+}
+
+function DangerZone({ onWiped }) {
+  const { toast } = useFeedback();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [confirmPhrase, setConfirmPhrase] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleOpen = () => {
+    setConfirmPhrase('');
+    setModalOpen(true);
+  };
+
+  const handleClose = () => {
+    if (deleting) return;
+    setModalOpen(false);
+    setConfirmPhrase('');
+  };
+
+  const handleDelete = async () => {
+    if (confirmPhrase.trim() !== 'DELETE ALL DATA') return;
+    if (!isAdminUnlocked()) {
+      toast('Unauthorized', 'Only authorized administrators can delete the database.', 'error');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await db.deleteAllData();
+      toast('Database Deleted', 'All records have been permanently deleted from the database.', 'success');
+      setModalOpen(false);
+      setConfirmPhrase('');
+      if (onWiped) await onWiped();
+    } catch (err) {
+      console.error('Failed to wipe database:', err);
+      toast('Error', err.message || 'Failed to delete database records.', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const isConfirmed = confirmPhrase.trim() === 'DELETE ALL DATA';
+
+  return (
+    <>
+      <Card
+        as="section"
+        aria-label="Danger Zone"
+        className="mt-6 border-red-200 bg-red-50/40 p-5 ring-1 ring-red-200/60"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                <AlertTriangle className="size-4" aria-hidden />
+              </span>
+              <h3 className="font-display text-base font-bold text-red-900">Danger Zone — Database Reset</h3>
+            </div>
+            <p className="max-w-2xl text-xs leading-relaxed text-slate-600">
+              Permanently delete all records from the database, including sales, purchases, customers, suppliers, inventory,
+              lot tracking, accounts, and configuration. This action is irreversible.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="danger"
+            icon={Trash2}
+            onClick={handleOpen}
+            className="shrink-0"
+          >
+            Delete Database
+          </Button>
+        </div>
+      </Card>
+
+      <Modal
+        open={modalOpen}
+        onClose={handleClose}
+        title="Permanently Delete Database?"
+        size="md"
+        footer={
+          <div className="flex w-full flex-col-reverse justify-end gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outlineWarning"
+              onClick={handleClose}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              icon={Trash2}
+              onClick={handleDelete}
+              disabled={!isConfirmed || deleting}
+              loading={deleting}
+            >
+              Permanently Delete Everything
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-red-300 bg-red-50 p-3.5 text-xs text-red-800">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-600" aria-hidden />
+              <div className="space-y-1">
+                <p className="font-bold uppercase tracking-wider text-red-900">
+                  CRITICAL WARNING: Irreversible Operation
+                </p>
+                <p className="leading-relaxed">
+                  You are about to permanently delete the entire database. All sales records, purchase bills, payments,
+                  customers, suppliers, expenses, stocks, and business settings will be erased forever.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="confirm-delete-phrase" className="block text-xs font-semibold text-slate-700">
+              To proceed, please type <span className="font-mono font-bold text-red-600">DELETE ALL DATA</span> below:
+            </label>
+            <TextField
+              id="confirm-delete-phrase"
+              value={confirmPhrase}
+              onChange={setConfirmPhrase}
+              placeholder="DELETE ALL DATA"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              disabled={deleting}
+            />
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 
@@ -412,6 +555,8 @@ export default function SettingsPage() {
       <div className="mt-5">
         <LoginCard />
       </div>
+
+      <DangerZone onWiped={biz.retry} />
 
       <p className="mt-8 text-center text-xs text-slate-400">Powered by {VENDOR.name}</p>
     </Page>

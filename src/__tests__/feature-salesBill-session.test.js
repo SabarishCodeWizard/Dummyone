@@ -63,8 +63,8 @@ describe('bill session transitions', () => {
     expect(s).toMatchObject({ saved: true, editingNo: '012', persistedNo: '012' });
   });
   test('save button label follows edit mode', () => {
-    expect(saveButtonLabel(session())).toBe('Save Bill');
-    expect(saveButtonLabel(session({ editingNo: '012' }))).toBe('Update Bill');
+    expect(saveButtonLabel(session())).toBe('Save Sales Bill');
+    expect(saveButtonLabel(session({ editingNo: '012' }))).toBe('Update Sales Bill');
   });
 });
 describe('editParamAction (route search param ?edit=)', () => {
@@ -105,10 +105,10 @@ describe('outputGuard (Generate / Share BILL)', () => {
   test('texts are the web page toasts', () => {
     expect(unsavedBillError('pdf')).toEqual({
       title: 'Unsaved Bill',
-      message: 'Please click "Save Bill" first before generating the PDF.',
+      message: 'Please click "Save Sales Bill" first before generating the PDF.',
     });
     expect(unsavedBillError('whatsapp').message).toBe(
-      'Please click "Save Bill" first before sharing on WhatsApp.',
+      'Please click "Save Sales Bill" first before sharing on WhatsApp.',
     );
   });
   test('an unsaved bill is blocked, a saved unchanged bill passes', () => {

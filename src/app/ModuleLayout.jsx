@@ -1,5 +1,4 @@
 import {
-  Archive,
   Boxes,
   Building2,
   CalendarDays,
@@ -84,7 +83,6 @@ export const NAV_CATEGORIES = [
       { to: '/processing/completed', label: 'Completed Lots', short: 'Completed', icon: CheckCircle2 },
       { to: '/processing/dyeing-units', label: 'Dyeing Units', short: 'Dyers', icon: Users },
       { to: '/processing/combing-units', label: 'Combing Units', short: 'Combing', icon: Sparkles },
-      { to: '/processing/old', label: 'Old Batches', short: 'Old', icon: Archive, tab: false },
     ],
   },
   {

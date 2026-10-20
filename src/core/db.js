@@ -24,6 +24,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getDb } from './firebase';
+import { isAdminUnlocked } from './admin';
 import {
   PURCHASE_LEDGER,
   SALES_LEDGER,
@@ -1378,6 +1379,74 @@ export class Database {
   async deleteProcessor(id) {
     await deleteDoc(this.ref('processors', id));
     this.invalidate('processors');
+  }
+
+  // ------------------------------------------------------------------ Database wipe (Administrator)
+  async deleteAllData() {
+    if (!isAdminUnlocked()) {
+      throw new Error('Unauthorized: Only administrators can delete the database.');
+    }
+    this._checkInit();
+    const collections = [
+      'invoices',
+      'payments',
+      'returns',
+      'recycleBin',
+      'purchase_invoices',
+      'purchaseInvoices',
+      'purchase_payments',
+      'purchasePayments',
+      'purchaseReturns',
+      'purchaseRecycleBin',
+      'customers',
+      'suppliers',
+      'expenses',
+      'shortcuts',
+      'purchase_shortcuts',
+      'purchaseShortcuts',
+      'openingStocks',
+      'productMetadata',
+      'processing_lots',
+      'processors',
+      'dyers',
+      'dyeing_batches',
+      'combing_batches',
+      'lenders',
+      'bank_accounts',
+      'account_transactions',
+      'finance',
+      'settings',
+    ];
+
+    for (const colName of collections) {
+      try {
+        const snap = await getDocs(this.col(colName));
+        if (!snap || snap.empty || !snap.docs) continue;
+        if (typeof writeBatch === 'function') {
+          let batch = writeBatch(this.firestore);
+          let count = 0;
+          for (const d of snap.docs) {
+            batch.delete(d.ref);
+            recordFirestoreOperation('delete', 1);
+            count++;
+            if (count >= 400) {
+              await batch.commit();
+              batch = writeBatch(this.firestore);
+              count = 0;
+            }
+          }
+          if (count > 0) {
+            await batch.commit();
+          }
+        } else {
+          await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        }
+      } catch (err) {
+        console.error(`Error deleting collection ${colName}:`, err);
+      }
+    }
+
+    this.invalidateAll();
   }
 }
 export const db = new Database();

@@ -359,3 +359,47 @@ describe('Settings page — unsaved edits and the full-size preview', () => {
     expect(await screen.findByTitle('Sales bill full-size preview')).toBeInTheDocument();
   });
 });
+
+describe('Settings page — Danger Zone database deletion', () => {
+  test('modal requires exact phrase DELETE ALL DATA before allowing deletion, and cancel aborts safely', async () => {
+    stubDb();
+    const deleteAll = vi.spyOn(db, 'deleteAllData').mockResolvedValue();
+    renderPage();
+    await nameField();
+
+    const openBtn = screen.getByRole('button', { name: 'Delete Database' });
+    expect(openBtn).toBeInTheDocument();
+    fireEvent.click(openBtn);
+
+    // Modal opens with clear warning
+    expect(await screen.findByText('Permanently Delete Database?')).toBeInTheDocument();
+    expect(screen.getByText(/CRITICAL WARNING: Irreversible Operation/)).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: 'Permanently Delete Everything' });
+    expect(confirmBtn).toBeDisabled();
+
+    // Partial or incorrect phrase keeps button disabled
+    const input = screen.getByPlaceholderText('DELETE ALL DATA');
+    fireEvent.change(input, { target: { value: 'DELETE' } });
+    expect(confirmBtn).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: 'delete all data' } });
+    expect(confirmBtn).toBeDisabled();
+
+    // Cancel closes the modal and does not delete
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByText('Permanently Delete Database?')).toBeNull());
+    expect(deleteAll).not.toHaveBeenCalled();
+
+    // Reopen and enter the exact confirmation phrase
+    fireEvent.click(openBtn);
+    const reopenInput = await screen.findByPlaceholderText('DELETE ALL DATA');
+    fireEvent.change(reopenInput, { target: { value: 'DELETE ALL DATA' } });
+    const reopenConfirmBtn = screen.getByRole('button', { name: 'Permanently Delete Everything' });
+    expect(reopenConfirmBtn).not.toBeDisabled();
+
+    fireEvent.click(reopenConfirmBtn);
+    await waitFor(() => expect(deleteAll).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/All records have been permanently deleted/)).toBeInTheDocument();
+  });
+});

@@ -23,7 +23,8 @@ export function markSaved(session, savedForm) {
 export function loadedBillSession(form, editingNo) {
   return { form, saved: true, editingNo, persistedNo: form.invoiceNo.trim() };
 }
-export const saveButtonLabel = (session) => (session.editingNo !== null ? 'Update Bill' : 'Save Bill');
+export const saveButtonLabel = (session) =>
+  session.editingNo !== null ? 'Update Sales Bill' : 'Save Sales Bill';
 /**
  * After a save the customer's ledger was re-synced, which may have corrected this bill's previous balance (another
  * device added a bill meanwhile, a back-dated bill…). The saved session shows what is stored, so a later Generate /
@@ -56,8 +57,8 @@ export function unsavedBillError(kind) {
     title: 'Unsaved Bill',
     message:
       kind === 'pdf'
-        ? 'Please click "Save Bill" first before generating the PDF.'
-        : 'Please click "Save Bill" first before sharing on WhatsApp.',
+        ? 'Please click "Save Sales Bill" first before generating the PDF.'
+        : 'Please click "Save Sales Bill" first before sharing on WhatsApp.',
   };
 }
 /** Generate / Share: the form must be valid AND saved without changes since (script.js checks them in this order). */

@@ -182,7 +182,7 @@ function UnitOrders({ kind, lots, oldBatches }) {
     return (
       <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
         No lots yet
-        {oldBatches ? ` · ${oldBatches} old batch${oldBatches === 1 ? '' : 'es'} in Old Batches` : ''}.
+        {oldBatches ? ` · ${oldBatches} old batch${oldBatches === 1 ? '' : 'es'}` : ''}.
       </p>
     );
   }
@@ -323,7 +323,7 @@ function UnitOrders({ kind, lots, oldBatches }) {
       ) : null}
       {oldBatches ? (
         <p className="mt-1 text-xs text-slate-500">
-          + {oldBatches} old batch{oldBatches === 1 ? '' : 'es'} (see Old Batches)
+          + {oldBatches} old batch{oldBatches === 1 ? '' : 'es'}
         </p>
       ) : null}
     </div>

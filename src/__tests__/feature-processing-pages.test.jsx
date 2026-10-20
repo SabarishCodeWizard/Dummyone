@@ -3,7 +3,6 @@ import { MemoryRouter } from 'react-router';
 import { vi } from 'vitest';
 import { db } from '@/core/db';
 import CompletedLotsPage from '@/features/processing/CompletedLotsPage';
-import OldBatchesPage from '@/features/processing/OldBatchesPage';
 import ProcessingLotsPage from '@/features/processing/ProcessingLotsPage';
 import UnitsPage from '@/features/processing/UnitsPage';
 import { LOT_STATUS } from '@/features/processing/lotLogic';
@@ -230,74 +229,6 @@ describe('other processing pages render', () => {
     expect(screen.queryByText('Sri Dyes')).toBeNull();
     expect(screen.getByText('In combing')).toBeInTheDocument();
     expect(screen.getByText('10 rolls · 47 kg')).toBeInTheDocument();
-  });
-  test('old batches archive', async () => {
-    stubDb([]);
-    db.getAllDyeingBatches.mockResolvedValue([
-      {
-        id: 'B-001',
-        batchId: 'B-001',
-        batchDate: '2026-01-01',
-        processorName: 'Old Dyer',
-        status: 'COMPLETED',
-        input: { description: 'Grey', qty: 10 },
-        output: [],
-        totalDyeingCost: 500,
-        payments: [],
-      },
-    ]);
-    renderPage(<OldBatchesPage />);
-    expect(await screen.findByText('B-001')).toBeInTheDocument();
-    expect(screen.getByText('Due ₹500.00')).toBeInTheDocument();
-  });
-  test('a combing batch: "Add Payment" from its payment history opens the COMBING pay form', async () => {
-    stubDb([]);
-    db.getAllCombingBatches.mockResolvedValue([
-      {
-        id: 'CB-001',
-        batchId: 'CB-001',
-        batchDate: '2026-10-18',
-        processorName: 'Old Mill',
-        status: 'IN_PROCESS',
-        input: { description: 'Grey', qty: 40, unit: 'Kgs' },
-        output: [],
-        totalCombingCost: 800,
-        payments: [],
-      },
-    ]);
-    renderPage(<OldBatchesPage />);
-    fireEvent.click(await screen.findByRole('button', { name: /^Payments/ }));
-    const history = await screen.findByRole('dialog');
-    fireEvent.click(within(history).getAllByRole('button', { name: /Make First Payment|Add Payment/ })[0]);
-    // the combing form (not the dyeing one): the type survives the history modal closing itself
-    expect(await screen.findByText(/Pay Mill \/ Processor — Batch CB-001/)).toBeInTheDocument();
-    expect(screen.queryByText(/Pay Dyer/)).toBeNull();
-  });
-  test('an old batch can be deleted for good (after confirming)', async () => {
-    stubDb([]);
-    const batch = {
-      id: 'B-001',
-      batchId: 'B-001',
-      batchDate: '2026-10-18',
-      processorName: 'Tiruppur Dyeing',
-      status: 'IN_PROCESS',
-      input: { description: 'Grey', qty: 50, unit: 'Rolls' },
-      output: [],
-      totalDyeingCost: 1000,
-      payments: [],
-    };
-    db.getAllDyeingBatches.mockResolvedValue([batch]);
-    vi.spyOn(db, 'getDyeingBatch').mockResolvedValue(batch);
-    const del = vi.spyOn(db, 'deleteDyeingBatch').mockResolvedValue();
-    renderPage(<OldBatchesPage />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
-    db.getAllDyeingBatches.mockResolvedValue([]);
-    const ask = await screen.findByRole('dialog');
-    expect(within(ask).getByText(/permanently/)).toBeInTheDocument();
-    fireEvent.click(within(ask).getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(del).toHaveBeenCalledWith('B-001'));
-    // the card is gone
-    await waitFor(() => expect(screen.queryByText(/Tiruppur Dyeing/)).toBeNull());
   });
 });
 

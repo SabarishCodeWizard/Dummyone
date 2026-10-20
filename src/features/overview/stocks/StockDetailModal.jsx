@@ -192,7 +192,7 @@ export default function StockDetailModal({ row, onClose }) {
     }
     // only the explicit flags decide: a supplier bill numbered "B-123" is still a purchase bill
     if (entry.isCombingReceipt || entry.isCombingIssue || entry.isDyeingReceipt || entry.isDyeingIssue) {
-      nav.push('/processing/old');
+      nav.push('/processing/lots');
       return;
     }
     const cleanNo = String(rawNo)

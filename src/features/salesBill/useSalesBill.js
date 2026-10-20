@@ -1,4 +1,4 @@
-import { useRouteParams } from '@/hooks/useRouteParams';
+import { useAppNavigate, useRouteParams } from '@/hooks/useRouteParams';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFeedback } from '@/ui';
 import { useFocusLoad } from '@/hooks/useFocusLoad';
@@ -28,6 +28,7 @@ import { useInvoiceSuggestion } from './useInvoiceSuggestion';
  */
 export function useSalesBill() {
   const { toast, confirm, loading } = useFeedback();
+  const nav = useAppNavigate();
   const { params, setParams } = useRouteParams();
   const editParam = Array.isArray(params.edit) ? params.edit[0] : params.edit;
   const editParamRef = useRef(editParam);
@@ -231,14 +232,17 @@ export function useSalesBill() {
     if (busy.current) return;
     busy.current = true;
     try {
-      await performSave();
+      const invoice = await performSave();
+      if (invoice) {
+        nav.replace('/sales/history');
+      }
     } catch (error) {
       console.error('Error saving bill:', error);
       toast('Error', 'Error saving bill. Please try again.', 'error');
     } finally {
       busy.current = false;
     }
-  }, [performSave, toast]);
+  }, [nav, performSave, toast]);
 
   const output = useCallback(
     async (kind) => {

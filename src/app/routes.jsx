@@ -26,7 +26,6 @@ const PurchaseBinPage = lazy(() => import('@/features/recycleBin/PurchaseBinPage
 const ProcessingLotsPage = lazy(() => import('@/features/processing/ProcessingLotsPage'));
 const CompletedLotsPage = lazy(() => import('@/features/processing/CompletedLotsPage'));
 const UnitsPage = lazy(() => import('@/features/processing/UnitsPage'));
-const OldBatchesPage = lazy(() => import('@/features/processing/OldBatchesPage'));
 
 const RevenuePage = lazy(() => import('@/features/overview/revenue/RevenuePage'));
 const StatisticsPage = lazy(() => import('@/features/overview/revenue/StatisticsPage'));
@@ -77,16 +76,16 @@ export function AppRoutes() {
               <Route path="completed" element={<CompletedLotsPage />} />
               <Route path="dyeing-units" element={<UnitsPage key="dyeing" kind="dyeing" />} />
               <Route path="combing-units" element={<UnitsPage key="combing" kind="combing" />} />
-              <Route path="old" element={<OldBatchesPage />} />
+              <Route path="old" element={<Navigate to="/processing/lots" replace />} />
             </Route>
 
             {/* old addresses of the separate Dyeing / Combing screens (bookmarks, PWA shortcuts) */}
             <Route path="dyeing/details" element={<Navigate to="/processing/dyeing-units" replace />} />
             <Route path="dyeing/add-dyer" element={<Navigate to="/processing/dyeing-units" replace />} />
-            <Route path="dyeing/settled" element={<Navigate to="/processing/old" replace />} />
+            <Route path="dyeing/settled" element={<Navigate to="/processing/lots" replace />} />
             <Route path="dyeing/*" element={<Navigate to="/processing/lots" replace />} />
             <Route path="combing/details" element={<Navigate to="/processing/combing-units" replace />} />
-            <Route path="combing/settled" element={<Navigate to="/processing/old" replace />} />
+            <Route path="combing/settled" element={<Navigate to="/processing/lots" replace />} />
             <Route path="combing/*" element={<Navigate to="/processing/lots" replace />} />
 
             <Route path="sales" element={<ModuleLayout module="sales" />}>
